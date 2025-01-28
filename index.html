@@ -76,8 +76,57 @@
     <div class="content">
       <h1>SmartRosary installer</h1>
       <p class="button-row" align="center">
+        <p id="current-version">Current Firmware Version: <span>Waiting for connection...</span></p>
        <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
       </p>
+
+      <script>
+        // Automatically read the firmware version from the device on connection
+        async function getFirmwareVersion() {
+          const versionDisplay = document.querySelector("#current-version span");
+          versionDisplay.textContent = "Connecting...";
+    
+          try {
+            // Request access to the serial port
+            const port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 });
+    
+            const decoder = new TextDecoderStream();
+            const readableStreamClosed = port.readable.pipeTo(decoder.writable);
+            const reader = decoder.readable.getReader();
+    
+            let firmwareVersion = "Unknown";
+    
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break; // Exit the loop if no more data is available
+    
+              // Parse the firmware version from the serial output
+              const match = value.match(/Firmware Version: ([^\r\n]+)/);
+              if (match) {
+                firmwareVersion = match[1];
+                break;
+              }
+            }
+    
+            // Display the firmware version
+            versionDisplay.textContent = firmwareVersion;
+    
+            // Clean up
+            reader.releaseLock();
+            await readableStreamClosed.catch(() => {});
+            await port.close();
+          } catch (error) {
+            console.error("Error reading firmware version:", error);
+            versionDisplay.textContent = "Error reading firmware version.";
+          }
+        }
+    
+        // Trigger the function when the page loads
+        window.addEventListener("load", () => {
+          getFirmwareVersion();
+        });
+      </script>
       
       <div class="footer">
         <a href="https://github.com/lechk82/smartrosary-web-flasher/"
