@@ -1,3 +1,3 @@
 # SmartRosary Installer
 
-[Visit installer website](https://lechk82.github.io/smartrosary-web-flasher/)
+[Visit installer website](https://drlechk.github.io/smartrosary-web-flasher/)
